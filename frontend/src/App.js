@@ -1,3 +1,4 @@
+      
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
@@ -15,9 +16,16 @@ function App() {
 
   const [opportunities, setOpportunities] = useState([]);
   const [walletConnected, setWalletConnected] = useState(false);
+  const [contractStatus, setContractStatus] = useState({
+    deployed: false,
+    address: null,
+    txHash: null,
+    deploying: false
+  });
 
   useEffect(() => {
     fetchBotStatus();
+    fetchContractStatus();
     const interval = setInterval(() => {
       fetchBotStatus();
       fetchOpportunities();
@@ -31,6 +39,15 @@ function App() {
       setBotStatus(response.data);
     } catch (error) {
       console.error('Error:', error);
+    }
+  };
+
+  const fetchContractStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/contract/status`);
+      setContractStatus(response.data);
+    } catch (error) {
+      console.error('Error fetching contract status:', error);
     }
   };
 
@@ -53,6 +70,29 @@ function App() {
       }
     } else {
       alert('MetaMask is not installed!');
+    }
+  };
+
+  const deployContract = async () => {
+    if (!walletConnected) {
+      alert('Please connect your wallet first!');
+      return;
+    }
+    
+    try {
+      setContractStatus(prev => ({...prev, deploying: true}));
+      const response = await axios.post(`${API}/contract/deploy`);
+      setContractStatus({
+        deployed: true,
+        address: response.data.address,
+        txHash: response.data.txHash,
+        deploying: false
+      });
+      alert('Contract deployed successfully!');
+    } catch (error) {
+      console.error('Error deploying contract:', error);
+      setContractStatus(prev => ({...prev, deploying: false}));
+      alert('Failed to deploy contract');
     }
   };
 
@@ -90,6 +130,9 @@ function App() {
             <span className={`badge ${walletConnected ? 'connected' : 'disconnected'}`}>
               {walletConnected ? 'Connected' : 'Not Connected'}
             </span>
+            <span className={`badge ${contractStatus.deployed ? 'deployed' : 'not-deployed'}`}>
+              {contractStatus.deployed ? 'Contract Deployed' : 'Contract Not Deployed'}
+            </span>
             <span className={`badge ${botStatus.active ? 'active' : 'inactive'}`}>
               {botStatus.active ? 'Bot Active' : 'Bot Inactive'}
             </span>
@@ -106,6 +149,43 @@ function App() {
               <button onClick={connectWallet} className="btn btn-primary">
                 Connect Wallet
               </button>
+            </div>
+          </div>
+        )}
+
+        {walletConnected && !contractStatus.deployed && (
+          <div className="contract-deploy-section">
+            <div className="deploy-content">
+              <h3>🔷 Deploy FlashLoan Contract to Base Network</h3>
+              <p>Deploy your arbitrage contract to Base network to start earning</p>
+              <div className="deploy-info">
+                <span>⛽ Gas Cost: ~0.001 ETH</span>
+                <span>🌐 Network: Base Mainnet</span>
+                <span>⚡ Ready for deployment</span>
+              </div>
+              <button 
+                onClick={deployContract} 
+                disabled={contractStatus.deploying}
+                className="btn btn-deploy"
+              >
+                {contractStatus.deploying ? '⏳ Deploying...' : '🚀 Deploy Contract'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {contractStatus.deployed && (
+          <div className="contract-status">
+            <div className="contract-info">
+              <h3>✅ Contract Deployed Successfully</h3>
+              <div className="contract-details">
+                <p><strong>Address:</strong> {contractStatus.address}</p>
+                <p><strong>Tx Hash:</strong> {contractStatus.txHash}</p>
+                <p><strong>Network:</strong> Base Mainnet</p>
+                <a href={`https://basescan.org/tx/${contractStatus.txHash}`} target="_blank" rel="noopener noreferrer">
+                  View on BaseScan →
+                </a>
+              </div>
             </div>
           </div>
         )}
@@ -147,7 +227,7 @@ function App() {
           <div className="controls-buttons">
             <button
               onClick={startBot}
-              disabled={botStatus.active}
+              disabled={botStatus.active || !contractStatus.deployed}
               className="btn btn-success"
             >
               ▶ Start Bot
@@ -160,6 +240,9 @@ function App() {
               ⏹ Stop Bot
             </button>
           </div>
+          {!contractStatus.deployed && (
+            <p className="deploy-warning">⚠️ Deploy contract first to enable bot</p>
+          )}
         </div>
 
         <div className="opportunities-section">
@@ -179,7 +262,7 @@ function App() {
             ))}
             {opportunities.length === 0 && (
               <div className="no-opportunities">
-                <p>No opportunities found. {!botStatus.active && 'Start the bot to begin scanning.'}</p>
+                <p>No opportunities found. {!botStatus.active && 'Deploy contract and start the bot to begin scanning.'}</p>
               </div>
             )}
           </div>
@@ -193,5 +276,4 @@ function App() {
   );
 }
 
-export default App;
-    
+export default App;       
