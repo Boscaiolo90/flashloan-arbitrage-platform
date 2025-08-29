@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import axios from 'axios';
 
-const API = 'http://localhost:8001/api';
+const API = 'https://dex-trader.preview.emergentagent.com/api';
 
 function App() {
   const [botStatus, setBotStatus] = useState({
-    active: false, total_profits: 0, successful_trades: 0, 
-    failed_trades: 0, active_opportunities: 0
+    active: false,
+    total_profits: 0,
+    successful_trades: 0,
+    failed_trades: 0,
+    active_opportunities: 0
   });
+
   const [opportunities, setOpportunities] = useState([]);
   const [walletConnected, setWalletConnected] = useState(false);
 
@@ -112,19 +116,16 @@ function App() {
             <div className="stat-value">{botStatus.total_profits.toFixed(6)} ETH</div>
             <div className="stat-subtitle">≈ ${(botStatus.total_profits * 2500).toFixed(2)}</div>
           </div>
-          
           <div className="stat-card trades">
             <h3>Successful Trades</h3>
             <div className="stat-value">{botStatus.successful_trades}</div>
             <div className="stat-subtitle">Trades completed</div>
           </div>
-          
           <div className="stat-card opportunities">
             <h3>Active Opportunities</h3>
             <div className="stat-value">{botStatus.active_opportunities}</div>
             <div className="stat-subtitle">{botStatus.active ? 'Real-time scanning' : 'Bot inactive'}</div>
           </div>
-          
           <div className="stat-card failed">
             <h3>Failed Trades</h3>
             <div className="stat-value">{botStatus.failed_trades}</div>
@@ -144,15 +145,15 @@ function App() {
             </div>
           </div>
           <div className="controls-buttons">
-            <button 
-              onClick={startBot} 
+            <button
+              onClick={startBot}
               disabled={botStatus.active}
               className="btn btn-success"
             >
               ▶ Start Bot
             </button>
-            <button 
-              onClick={stopBot} 
+            <button
+              onClick={stopBot}
               disabled={!botStatus.active}
               className="btn btn-danger"
             >
@@ -190,5 +191,7 @@ function App() {
       </footer>
     </div>
   );
-                                                         }
-        
+}
+
+export default App;
+    
